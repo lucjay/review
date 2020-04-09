@@ -6,6 +6,11 @@
 <meta charset="UTF-8">
 <title>Insert title here</title>
 <script>
+function getMovieXML()() {
+	
+}
+
+
 	function getMovieJSON() {
 		var xhttp = new XMLHttpRequest();
 		xhttp.onreadystatechange = function() {
