@@ -7,6 +7,9 @@
 	<welcome-file-list>
 		<welcome-file>index.jsp</welcome-file>
 	</welcome-file-list>
+	<session-config>
+		<session-timeout>1</session-timeout>
+	</session-config>
 	<listener>
 		<listener-class>org.apache.tiles.web.startup.simple.SimpleTilesListener</listener-class>
 	</listener>
@@ -18,4 +21,5 @@
 		<servlet-name>Tiles Dispatch Servlet</servlet-name>
 		<url-pattern>*.tiles</url-pattern>
 	</servlet-mapping>
+
 </web-app>

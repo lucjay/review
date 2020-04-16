@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.sql.*;
 import java.util.*;
 
+import javax.print.DocFlavor.STRING;
+
 /**
  * File : EmpDAO.java Desc : 사원관리 DAO 클래스
  * 
@@ -151,13 +153,32 @@ public class EmpDAO {
 	}
 
 	// 전체 사원 목록을 가져오는 메서드
-	public ArrayList<EmpDTO> getDBList() {
+	public ArrayList<EmpDTO> getDBList(EmpSearchDTO dto) {
 		ArrayList<EmpDTO> datas = new ArrayList<EmpDTO>();
 
-		String sql = "select * from employees order by EMPLOYEE_ID desc";
+		// 부서, first_name
+		String where = " where 1 = 1 ";
+		if (dto.getDepartment_id() != null && !dto.getDepartment_id().isEmpty()) {
+			where += " and department_id = ? ";
+		}
+		if (dto.getFirst_name() != null && !dto.getFirst_name().isEmpty()) {
+			where += " and upper(first_name) like '%' || upper(?) || '%' ";
+		}
+		String sql = "select a.* from ( select rownum rn, b.* from (  " + "select * from employees " + where
+				+ " order by EMPLOYEE_ID desc" + ") b ) a where rn  between ? and ? ";
+		System.out.println(sql);
 		try {
 			conn = ConnectionManager.getConnnection();
 			pstmt = conn.prepareStatement(sql);
+			int p = 0;
+			if (dto.getDepartment_id() != null && !dto.getDepartment_id().isEmpty()) {
+				pstmt.setString(++p, dto.getDepartment_id());
+			}
+			if (dto.getFirst_name() != null && !dto.getFirst_name().isEmpty()) {
+				pstmt.setString(++p, dto.getFirst_name());
+			}
+			pstmt.setInt(++p, dto.getFirst());
+			pstmt.setInt(++p, dto.getEnd());
 			ResultSet rs = pstmt.executeQuery();
 			while (rs.next()) {
 				EmpDTO emp = new EmpDTO();
@@ -185,13 +206,31 @@ public class EmpDAO {
 	}
 
 	// 전체 건수 조회
-	public int count() {
+	public int count(EmpSearchDTO dto) {
 		int result = 0;
 		try {
 			conn = ConnectionManager.getConnnection();
-			String sql = "select count(*) from employees";
-			stmt = conn.createStatement();
-			ResultSet rs = stmt.executeQuery(sql);
+
+			String where = " where 1 = 1 ";
+			if (dto.getDepartment_id() != null && !dto.getDepartment_id().isEmpty()) {
+				where += " and department_id = ? ";
+			}
+			if (dto.getFirst_name() != null && !dto.getFirst_name().isEmpty()) {
+				where += " and upper(first_name) like '%' || upper(?) || '%' ";
+			}
+
+			String sql = "select count(*) from employees" + where;
+			pstmt = conn.prepareStatement(sql);
+
+			int p = 0;
+			if (dto.getDepartment_id() != null && !dto.getDepartment_id().isEmpty()) {
+				pstmt.setString(++p, dto.getDepartment_id());
+			}
+			if (dto.getFirst_name() != null && !dto.getFirst_name().isEmpty()) {
+				pstmt.setString(++p, dto.getFirst_name());
+			}
+
+			ResultSet rs = pstmt.executeQuery();
 			rs.next();
 			result = rs.getInt(1);
 		} catch (Exception e) {
@@ -227,5 +266,29 @@ public class EmpDAO {
 			ConnectionManager.close(conn);
 		}
 		return datas;
+	}
+
+	public List<Map<String, Object>> getRegion() {
+		List<Map<String, Object>> list = new ArrayList<>();
+		try {
+			conn = ConnectionManager.getConnnection();
+			String sql = "select city, l.country_id, country_name, region_name from locations l, countries c, regions r\r\n"
+					+ "where l.country_id = c.country_id and c.region_id = r.region_id order by city";
+			pstmt = conn.prepareStatement(sql);
+			ResultSet rs = pstmt.executeQuery();
+			while (rs.next()) {
+				Map<String, Object> map = new HashMap<String, Object>();
+				map.put("city", rs.getString("city"));
+				map.put("country_id", rs.getString("country_id"));
+				map.put("country_name", rs.getString("country_name"));
+				map.put("region_name", rs.getString("region_name"));
+				list.add(map);
+			}
+		} catch (Exception e) {
+
+		} finally {
+			ConnectionManager.close(conn);
+		}
+		return list;
 	}
 }
